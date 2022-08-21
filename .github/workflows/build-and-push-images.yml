@@ -45,6 +45,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ github.repository }}:${{ steps.version.outputs.major_prerelease }}
+          tags: ${{ github.repository }}:${{ steps.version.outputs.full_without_prefix }}
           platforms: |
             linux/amd64
