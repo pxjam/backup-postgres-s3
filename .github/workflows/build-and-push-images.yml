@@ -21,7 +21,7 @@ jobs:
           echo "Major version: ${{ steps.version.outputs.major }}"
           echo "Major with pre-release: ${{ steps.version.outputs.major_prerelease }}"
 
-      - name: Exit if not a valid version format
+      - name: Exit if version format is invalid
         run: exit 1
         if: steps.version.outputs.is_valid != 'true'
 
