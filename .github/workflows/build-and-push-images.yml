@@ -2,13 +2,29 @@ name: Build and push images
 
 on:
   release:
-    types: [published]
+    types: [ published ]
 
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: nowsprinting/check-version-format-action@v3
+        id: version
+        with:
+          prefix: 'v'
+
+      - name: Version tag only step
+        run: |
+          echo "Found valid version format in tag!"
+          echo "Full version: ${{ steps.version.outputs.full }}"
+          echo "Major version: ${{ steps.version.outputs.major }}"
+          echo "Major with pre-release: ${{ steps.version.outputs.major_prerelease }}"
+
+      - name: Exit if not a valid version format
+        run: exit 1
+        if: steps.version.outputs.is_valid != 'true'
+
       - name: Checkout repository
         uses: actions/checkout@v2
 
@@ -29,6 +45,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ github.repository }}:${{ github.ref_name }}
+          tags: ${{ github.repository }}:${{ steps.version.outputs.major_prerelease }}
           platforms: |
             linux/amd64
