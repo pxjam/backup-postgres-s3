@@ -1,0 +1,19 @@
+FROM ubuntu:22.04
+
+COPY src/* /root/
+
+ENV BAKPGS3_TIMEZONE="Europe/London"
+ENV BAKPGS3_ACCESS_KEY=""
+ENV BAKPGS3_CRON_TIME=""
+ENV BAKPGS3_ENDPOINT=""
+ENV BAKPGS3_PROJECT_NAME=""
+ENV BAKPGS3_REGION=""
+ENV BAKPGS3_SECRET_KEY=""
+ENV BAKPGS3_USER=""
+
+RUN chmod 755 /root/*.sh && \
+	 /root/install.sh
+
+RUN ls -la /root
+
+CMD ["/root/run.sh"]
