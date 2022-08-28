@@ -14,6 +14,4 @@ ENV BAKPGS3_DB_USER=""
 RUN chmod 755 /root/*.sh && \
 	 /root/install.sh
 
-RUN ls -la /root
-
 CMD ["/root/run.sh"]
