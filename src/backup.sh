@@ -8,7 +8,7 @@ DUMP_FILENAME="/root/${BAKPGS3_PROJECT_NAME}.$(date '+%F').sql.gz"
 
 export PGPASSWORD="$BAKPGS3_DB_PASSWORD"
 
-pg_dump --format=custom \
+pg_dump --encoding utf8 \
 	-h "$BAKPGS3_DB_HOST" \
 	-p 5432 \
 	-U "$BAKPGS3_DB_USER" \
