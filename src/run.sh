@@ -6,9 +6,13 @@ echo "Starting container $HOSTNAME"
 [ -z "$BAKPGS3_CRON_TIME" ] && { echo "FAIL: please specify \$BAKPGS3_CRON_TIME env variable" && exit 1; }
 [ -z "$BAKPGS3_DB_USER" ] && { echo "FAIL: please specify \$BAKPGS3_DB_USER env variable" && exit 1; }
 [ -z "$BAKPGS3_S3_REGION" ] && { echo "FAIL: please specify \$BAKPGS3_S3_REGION env variable" && exit 1; }
+[ -z "$BAKPGS3_TIMEZONE" ] && { echo "FAIL: please specify \$BAKPGS3_TIMEZONE env variable" && exit 1; }
 
 BAKPGS3_S3_ACCESS_KEY=$(cat /run/secrets/bakpgs3_s3_access_key)
 BAKPGS3_S3_SECRET_KEY=$(cat /run/secrets/bakpgs3_s3_secret_key)
+
+ln -snf "/usr/share/zoneinfo/$BAKPGS3_TIMEZONE" /etc/localtime
+echo "$BAKPGS3_TIMEZONE" > /etc/timezone
 
 mkdir -p ~/.config/rclone/
 

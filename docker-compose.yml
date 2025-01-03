@@ -35,7 +35,7 @@ services:
       BAKPGS3_S3_BUCKET: ${BAKPGS3_S3_BUCKET}
       BAKPGS3_S3_ENDPOINT: ${BAKPGS3_S3_ENDPOINT}
       BAKPGS3_S3_REGION: ${BAKPGS3_S3_REGION}
-      BAKPGS3_TIMEZONE: ${BAKPGS3_S3_REGION}
+      BAKPGS3_TIMEZONE: ${BAKPGS3_S3_TIMEZONE}
     secrets:
       - bakpgs3_db_password
       - bakpgs3_s3_access_key
