@@ -24,8 +24,6 @@ if [ "$(date +%u)" -eq 7 ]; then
 elif [ "$(date +%d)" -eq 1 ]; then
 	if [ "$(date +%m)" -eq 1 ]; then
 		storage_dir="yearly"
-	elif [ "$(date +%m)" -eq 4 ] || [ "$(date +%m)" -eq 7 ] || [ "$(date +%m)" -eq 10 ]; then
-		storage_dir="quarterly"
 	else
 		storage_dir="monthly"
 	fi
