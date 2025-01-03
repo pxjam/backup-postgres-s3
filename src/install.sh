@@ -7,7 +7,7 @@ apt-get update
 apt-get install -y \
 	cron \
 	curl \
-	s3cmd \
+	rclone \
 	postgresql-client
 
 touch log.txt

@@ -1,16 +1,16 @@
-version: "3.9"
-
 services:
   postgres:
     container_name: postgres
-    image: postgres:14.5
+    image: postgres:15
     expose:
       - 5432
     restart: always
     environment:
       POSTGRES_DB: ${BAKPGS3_DB_DATABASE}
-      POSTGRES_PASSWORD: ${BAKPGS3_DB_PASSWORD}
+      POSTGRES_PASSWORD_FILE: /run/secrets/bakpgs3_db_password
       POSTGRES_USER: ${BAKPGS3_DB_USER}
+    secrets:
+      - bakpgs3_db_password
     volumes:
       - data:/var/lib/postgresql/data
     healthcheck:
@@ -19,24 +19,64 @@ services:
       retries: 120
 
   backup:
-    image: pxjam/backup-postgres-s3:0.1.5
+    image: pxjam/backup-postgres-s3:latest
     depends_on:
       postgres:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     container_name: backup-postgres-s3
     environment:
       BAKPGS3_CRON_TIME: ${BAKPGS3_CRON_TIME}
       BAKPGS3_DB_DATABASE: ${BAKPGS3_DB_DATABASE}
       BAKPGS3_DB_HOST: ${BAKPGS3_DB_HOST}
-      BAKPGS3_DB_PASSWORD: ${BAKPGS3_DB_PASSWORD}
       BAKPGS3_DB_USER: ${BAKPGS3_DB_USER}
       BAKPGS3_PROJECT_NAME: ${BAKPGS3_PROJECT_NAME}
-      BAKPGS3_S3_ACCESS_KEY: ${BAKPGS3_S3_ACCESS_KEY}
       BAKPGS3_S3_BUCKET: ${BAKPGS3_S3_BUCKET}
       BAKPGS3_S3_ENDPOINT: ${BAKPGS3_S3_ENDPOINT}
       BAKPGS3_S3_REGION: ${BAKPGS3_S3_REGION}
-      BAKPGS3_S3_SECRET_KEY: ${BAKPGS3_S3_SECRET_KEY}
       BAKPGS3_TIMEZONE: ${BAKPGS3_S3_REGION}
+    secrets:
+      - bakpgs3_db_password
+      - bakpgs3_s3_access_key
+      - bakpgs3_s3_secret_key
+
+  minio:
+    image: 'minio/minio:latest'
+    ports:
+      - '${FORWARD_MINIO_PORT:-9000}:9000'
+      - '${FORWARD_MINIO_CONSOLE_PORT:-8900}:8900'
+    environment:
+      MINIO_ROOT_USER: test
+      MINIO_ROOT_PASSWORD: password
+    command: 'minio server /data/minio --console-address ":8900"'
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - 'http://localhost:9000/minio/health/live'
+      retries: 3
+      timeout: 5s
+
+  minio-client:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set myminio http://minio:9000 test password) do echo 'waiting for minio'; sleep 2; done;
+      /usr/bin/mc mb myminio/${BAKPGS3_S3_BUCKET};
+      "
+
+secrets:
+  bakpgs3_db_password:
+    file: secrets/bakpgs3_db_password
+  bakpgs3_s3_access_key:
+    file: secrets/bakpgs3_s3_access_key
+  bakpgs3_s3_secret_key:
+    file: secrets/bakpgs3_s3_secret_key
 
 volumes:
   data:

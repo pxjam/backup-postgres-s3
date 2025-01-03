@@ -1,9 +1,24 @@
+$(VERBOSE).SILENT:
+SHELL := /bin/bash
+CYAN := \033[0;36m
+NC := \033[0m
+
 IMAGE=pxjam/backup-postgres-s3
 
-build:
-	docker buildx build --platform linux/amd64 \
-		--progress=plain \
-		-t ${IMAGE}:latest .
+.DEFAULT_GOAL := help
 
-test-run:
-	docker-compose up --force-recreate --build --remove-orphans
+help:
+	grep -E '^[a-zA-Z_-]+:[ \t]+.*?# .*$$' $(MAKEFILE_LIST) | sort | awk -F ':.*?# ' '{printf "  ${CYAN}%-24s${NC}\t%s\n", $$1, $$2}'
+
+build: # build docker image
+	docker buildx build --platform linux/amd64 \
+	--progress=plain \
+	-t ${IMAGE}:latest .
+
+run: # run local docker compose for testing
+	docker compose up --force-recreate --build --remove-orphans
+
+clean: # clean local docker compose
+	docker compose down --volumes
+
+clean-build-run: clean build run # clean and run local docker compose for testing
