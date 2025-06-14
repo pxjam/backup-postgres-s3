@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Set timezone for this script
-export TZ="$BAKPGS3_TIMEZONE"
-
 # Log function to write to both stdout and log file
 log() {
     echo "$1" | tee -a /logs/backup.log
