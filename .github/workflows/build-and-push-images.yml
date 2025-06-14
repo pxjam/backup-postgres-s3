@@ -57,5 +57,6 @@ jobs:
             ghcr.io/${{ github.repository }}:${{ steps.version.outputs.full_without_prefix }}
           platforms: |
             linux/amd64
+            linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
