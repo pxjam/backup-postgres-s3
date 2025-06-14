@@ -10,6 +10,7 @@ compose.yml is for local testing and development, and usage example.
 ## Volumes
 
 The container uses one volume:
+
 - `backup-logs` - Stores backup logs (persistent)
 
 ## Build and test locally
@@ -43,14 +44,36 @@ docker compose run --rm backup
 ```
 
 Also you can schedule the backup to check if it works correctly:
+
 ```crontab
 * * * * * docker compose -f /path/to/compose.yml run --rm backup
 ```
 
-Login and password are specified in:
+## Usage: Environment Variables vs Docker Secrets
 
-- ./secret/bakpgs3_s3_access_key
-- ./secret/bakpgs3_s3_secret_key
+You can run the stack using either environment variables or Docker secrets for sensitive values (DB password, S3 keys).
+
+### 1. Using Environment Variables (simple, for local/dev)
+
+- Edit `.env` (or `.env.local.example`) and set:
+	- `BAKPGS3_DB_PASSWORD`, `BAKPGS3_S3_ACCESS_KEY`, `BAKPGS3_S3_SECRET_KEY`
+- Use the default `compose.yml`:
+
+```bash
+docker compose up --build
+```
+
+### 2. Using Docker Secrets (recommended for production)
+
+- Place secret files in the `secrets/` directory:
+	- `secrets/bakpgs3_db_password`, `secrets/bakpgs3_s3_access_key`, `secrets/bakpgs3_s3_secret_key`
+- Use the `compose.secrets.yml` file:
+
+```bash
+docker compose -f compose.secrets.yml up --build
+```
+
+If both an environment variable and a Docker secret are set, the environment variable takes precedence.
 
 ## Publish new version
 

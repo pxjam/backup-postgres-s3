@@ -5,7 +5,12 @@ log() {
     echo "$1" | tee -a /logs/backup.log
 }
 
-BAKPGS3_DB_PASSWORD=$(cat /run/secrets/bakpgs3_db_password)
+# Get DB password from env var or secret
+if [ -n "$BAKPGS3_DB_PASSWORD" ]; then
+  db_password="$BAKPGS3_DB_PASSWORD"
+else
+  db_password=$(cat /run/secrets/bakpgs3_db_password 2>/dev/null)
+fi
 
 log "BACKUP STARTED FOR $BAKPGS3_PROJECT_NAME AT $(date)"
 
@@ -14,7 +19,7 @@ rm -f /tmp/*.sql.gz
 
 dump_filename="/tmp/${BAKPGS3_PROJECT_NAME}.$(date '+%F_%H-%M-%S').sql.gz"
 
-export PGPASSWORD="$BAKPGS3_DB_PASSWORD"
+export PGPASSWORD="$db_password"
 
 log "Creating database dump..."
 pg_dump --encoding utf8 \
