@@ -10,7 +10,7 @@ and usage example.
 Copy the example environment file:
 
 ```bash
-cp .env.local .env
+cp .env.local.example .env
 ```
 
 Build the image:

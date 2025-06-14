@@ -10,6 +10,12 @@ ENV BAKPGS3_S3_REGION=""
 ENV BAKPGS3_DB_USER=""
 
 RUN chmod 755 /root/*.sh && \
-	 /root/install.sh
+	apt-get update && \
+	apt-get install -y \
+		cron \
+		curl \
+		rclone \
+		postgresql-client && \
+	touch log.txt
 
 CMD ["/root/run.sh"]
