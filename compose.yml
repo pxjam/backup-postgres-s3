@@ -25,7 +25,6 @@ services:
       minio:
         condition: service_healthy
     environment:
-      BAKPGS3_CRON_TIME: ${BAKPGS3_CRON_TIME}
       BAKPGS3_DB_DATABASE: ${BAKPGS3_DB_DATABASE}
       BAKPGS3_DB_HOST: ${BAKPGS3_DB_HOST}
       BAKPGS3_DB_USER: ${BAKPGS3_DB_USER}
@@ -38,6 +37,8 @@ services:
       - bakpgs3_db_password
       - bakpgs3_s3_access_key
       - bakpgs3_s3_secret_key
+    volumes:
+      - backup-logs:/logs
 
   minio:
     image: 'minio/minio:latest'
@@ -74,3 +75,4 @@ secrets:
 
 volumes:
   data:
+  backup-logs:

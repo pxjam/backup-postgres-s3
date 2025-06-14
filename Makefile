@@ -18,6 +18,8 @@ build: # build docker image
 run: # run local docker compose for testing
 	docker compose up --force-recreate --build --remove-orphans
 
+# docker compose run --rm backup
+
 clean: # clean local docker compose
 	docker compose down --volumes
 	docker rmi ${IMAGE}:latest || true

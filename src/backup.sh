@@ -1,21 +1,38 @@
 #!/bin/bash
 
+# Set timezone for this script
+export TZ="$BAKPGS3_TIMEZONE"
+
+# Log function to write to both stdout and log file
+log() {
+    echo "$1" | tee -a /logs/backup.log
+}
+
 BAKPGS3_DB_PASSWORD=$(cat /run/secrets/bakpgs3_db_password)
 
-echo "CRON MAKES BACKUP OF $BAKPGS3_PROJECT_NAME AT $(date)"
+log "BACKUP STARTED FOR $BAKPGS3_PROJECT_NAME AT $(date)"
 
-rm -f /root/*.sql.gz
+# Clean up any existing dump files in container
+rm -f /tmp/*.sql.gz
 
-dump_filename="/root/${BAKPGS3_PROJECT_NAME}.$(date '+%F').sql.gz"
+dump_filename="/tmp/${BAKPGS3_PROJECT_NAME}.$(date '+%F_%H-%M-%S').sql.gz"
 
 export PGPASSWORD="$BAKPGS3_DB_PASSWORD"
 
+log "Creating database dump..."
 pg_dump --encoding utf8 \
 	-h "$BAKPGS3_DB_HOST" \
 	-p 5432 \
 	-U "$BAKPGS3_DB_USER" \
 	-d "$BAKPGS3_DB_DATABASE" |
 	gzip > "$dump_filename"
+
+if [ $? -ne 0 ]; then
+    log "ERROR: Database dump failed"
+    exit 1
+fi
+
+log "Database dump created: $dump_filename ($(du -h "$dump_filename" | cut -f1))"
 
 storage_dir="daily"
 
@@ -29,7 +46,19 @@ elif [ "$(date +%d)" -eq 1 ]; then
 	fi
 fi
 
-echo "Today is $(date +%d.%m.%Y), so the backup will be stored in $storage_dir"
+log "Today is $(date +%d.%m.%Y), so the backup will be stored in $storage_dir"
 
-echo "Rclone copy $dump_filename to default:$BAKPGS3_S3_BUCKET/$storage_dir/"
+log "Uploading backup to S3: $BAKPGS3_S3_BUCKET/$storage_dir/"
 rclone copy "$dump_filename" "default:$BAKPGS3_S3_BUCKET/$storage_dir/"
+
+if [ $? -eq 0 ]; then
+    log "Backup uploaded successfully"
+    # Clean up the temporary dump file
+    rm -f "$dump_filename"
+    log "Temporary dump file cleaned up"
+else
+    log "ERROR: Backup upload failed"
+    exit 1
+fi
+
+log "BACKUP COMPLETED FOR $BAKPGS3_PROJECT_NAME AT $(date)"

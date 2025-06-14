@@ -1,21 +1,26 @@
 #!/bin/bash
 
-echo "Starting container $HOSTNAME"
+echo "Starting backup container $HOSTNAME"
 
+# Required environment variables check
 [ -z "$BAKPGS3_PROJECT_NAME" ] && { echo "FAIL: please specify \$BAKPGS3_PROJECT_NAME env variable" && exit 1; }
-[ -z "$BAKPGS3_CRON_TIME" ] && { echo "FAIL: please specify \$BAKPGS3_CRON_TIME env variable" && exit 1; }
 [ -z "$BAKPGS3_DB_USER" ] && { echo "FAIL: please specify \$BAKPGS3_DB_USER env variable" && exit 1; }
 [ -z "$BAKPGS3_S3_REGION" ] && { echo "FAIL: please specify \$BAKPGS3_S3_REGION env variable" && exit 1; }
 [ -z "$BAKPGS3_TIMEZONE" ] && { echo "FAIL: please specify \$BAKPGS3_TIMEZONE env variable" && exit 1; }
 
+# Read secrets
 BAKPGS3_S3_ACCESS_KEY=$(cat /run/secrets/bakpgs3_s3_access_key)
 BAKPGS3_S3_SECRET_KEY=$(cat /run/secrets/bakpgs3_s3_secret_key)
 
+# Set timezone
 ln -snf "/usr/share/zoneinfo/$BAKPGS3_TIMEZONE" /etc/localtime
 echo "$BAKPGS3_TIMEZONE" > /etc/timezone
+export TZ="$BAKPGS3_TIMEZONE"
 
+# Create rclone config directory and config file
 mkdir -p ~/.config/rclone/
 
+echo "Creating rclone configuration..."
 echo "
 [default]
 type = s3
@@ -29,15 +34,6 @@ no_check_bucket = true
 bucket = $BAKPGS3_S3_BUCKET
 " > ~/.config/rclone/rclone.conf
 
-service cron start
-
-env >> /etc/environment
-echo "
-${BAKPGS3_CRON_TIME} /root/backup.sh >> /root/log.txt 2>&1
-" > /root/crontab.conf
-
-crontab /root/crontab.conf
-
-source /root/backup.sh
-
-tail -f /dev/null
+# Run the backup
+echo "Running backup..."
+/root/backup.sh
