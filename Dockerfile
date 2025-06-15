@@ -6,8 +6,17 @@ RUN apt-get update && \
 	rclone \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY src/* /root/
+RUN groupadd -g 1001 app && \
+    useradd -m -u 1001 -g 1001 app && \
+	 mkdir -p /app/logs && chown -R app:app /app
 
-RUN chmod 755 /root/*.sh
+WORKDIR /app
 
-CMD ["/root/run.sh"]
+COPY src/* /app/
+
+RUN chmod 755 /app/*.sh && \
+    chown app:app /app/*.sh
+
+USER app
+
+CMD ["/app/run.sh"]
