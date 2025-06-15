@@ -111,3 +111,9 @@ The image is built for multiple platforms (linux/amd64, linux/arm64) and publish
 git tag v0.99.0
 git push origin v0.99.0
 ```
+
+## Version 1.0.0 Breaking Changes
+
+- The image now runs as a non-root user (UID/GID 1001) for enhanced security.
+- Ability to use both Docker secrets and environment variables for sensitive data.
+- No built-in cron; the container runs once and exits, suitable for host cron scheduling.
