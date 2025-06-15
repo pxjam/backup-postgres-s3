@@ -12,7 +12,7 @@ services:
       - data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${BAKPGS3_DB_USER}"]
-      interval: 2s
+      interval: 1s
       retries: 120
 
   backup:
@@ -47,7 +47,7 @@ services:
     command: 'minio server /data/minio --console-address ":8900"'
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      retries: 3
+      retries: 5
       timeout: 5s
 
   minio-client:

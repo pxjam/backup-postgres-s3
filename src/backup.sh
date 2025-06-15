@@ -29,8 +29,9 @@ pg_dump --encoding utf8 \
 	-d "$BAKPGS3_DB_DATABASE" |
 	gzip > "$dump_filename"
 
-if [ $? -ne 0 ]; then
+if [ ${PIPESTATUS[0]} -ne 0 ]; then
     log "ERROR: Database dump failed"
+    rm -f "$dump_filename"
     exit 1
 fi
 
