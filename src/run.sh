@@ -1,43 +1,38 @@
 #!/bin/bash
 
-echo "Starting container $HOSTNAME"
+echo "Starting backup container $HOSTNAME"
 
 [ -z "$BAKPGS3_PROJECT_NAME" ] && { echo "FAIL: please specify \$BAKPGS3_PROJECT_NAME env variable" && exit 1; }
-[ -z "$BAKPGS3_CRON_TIME" ] && { echo "FAIL: please specify \$BAKPGS3_CRON_TIME env variable" && exit 1; }
 [ -z "$BAKPGS3_DB_USER" ] && { echo "FAIL: please specify \$BAKPGS3_DB_USER env variable" && exit 1; }
 [ -z "$BAKPGS3_S3_REGION" ] && { echo "FAIL: please specify \$BAKPGS3_S3_REGION env variable" && exit 1; }
-[ -z "$BAKPGS3_TIMEZONE" ] && { echo "FAIL: please specify \$BAKPGS3_TIMEZONE env variable" && exit 1; }
 
-BAKPGS3_S3_ACCESS_KEY=$(cat /run/secrets/bakpgs3_s3_access_key)
-BAKPGS3_S3_SECRET_KEY=$(cat /run/secrets/bakpgs3_s3_secret_key)
+if [ -n "$BAKPGS3_S3_ACCESS_KEY" ]; then
+  s3_access_key="$BAKPGS3_S3_ACCESS_KEY"
+else
+  s3_access_key=$(cat /run/secrets/bakpgs3_s3_access_key 2>/dev/null)
+fi
 
-ln -snf "/usr/share/zoneinfo/$BAKPGS3_TIMEZONE" /etc/localtime
-echo "$BAKPGS3_TIMEZONE" > /etc/timezone
+if [ -n "$BAKPGS3_S3_SECRET_KEY" ]; then
+  s3_secret_key="$BAKPGS3_S3_SECRET_KEY"
+else
+  s3_secret_key=$(cat /run/secrets/bakpgs3_s3_secret_key 2>/dev/null)
+fi
 
 mkdir -p ~/.config/rclone/
 
+echo "Creating rclone configuration..."
 echo "
 [default]
 type = s3
 provider = Other
 env_auth = false
-access_key_id = $BAKPGS3_S3_ACCESS_KEY
-secret_access_key = $BAKPGS3_S3_SECRET_KEY
+access_key_id = $s3_access_key
+secret_access_key = $s3_secret_key
 region = $BAKPGS3_S3_REGION
 endpoint = $BAKPGS3_S3_ENDPOINT
 no_check_bucket = true
 bucket = $BAKPGS3_S3_BUCKET
 " > ~/.config/rclone/rclone.conf
 
-service cron start
-
-env >> /etc/environment
-echo "
-${BAKPGS3_CRON_TIME} /root/backup.sh >> /root/log.txt 2>&1
-" > /root/crontab.conf
-
-crontab /root/crontab.conf
-
-source /root/backup.sh
-
-tail -f /dev/null
+echo "Running backup..."
+/app/backup.sh

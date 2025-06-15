@@ -1,15 +1,24 @@
-FROM ubuntu:24.04
+FROM postgres:17.5
 
-COPY src/* /root/
+RUN apt-get update && \
+	apt-get install -y --no-install-recommends \
+	curl \
+	rclone \
+	ca-certificates \
+	&& update-ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
 
-ENV BAKPGS3_TIMEZONE="Europe/London"
-ENV BAKPGS3_CRON_TIME=""
-ENV BAKPGS3_S3_ENDPOINT=""
-ENV BAKPGS3_PROJECT_NAME=""
-ENV BAKPGS3_S3_REGION=""
-ENV BAKPGS3_DB_USER=""
+RUN groupadd -g 1001 app && \
+    useradd -m -u 1001 -g 1001 app && \
+	 mkdir -p /app/logs && chown -R app:app /app
 
-RUN chmod 755 /root/*.sh && \
-	 /root/install.sh
+WORKDIR /app
 
-CMD ["/root/run.sh"]
+COPY src/* /app/
+
+RUN chmod 755 /app/*.sh && \
+    chown app:app /app/*.sh
+
+USER app
+
+CMD ["/app/run.sh"]

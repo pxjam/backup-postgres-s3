@@ -1,21 +1,44 @@
 #!/bin/bash
 
-BAKPGS3_DB_PASSWORD=$(cat /run/secrets/bakpgs3_db_password)
+log() {
+	echo -e "$1"
+	echo -e "$1" >>/app/logs/backup.log
+}
 
-echo "CRON MAKES BACKUP OF $BAKPGS3_PROJECT_NAME AT $(date)"
+if [ -n "$BAKPGS3_DB_PASSWORD" ]; then
+	db_password="$BAKPGS3_DB_PASSWORD"
+else
+	db_password=$(cat /run/secrets/bakpgs3_db_password 2>/dev/null)
+fi
 
-rm -f /root/*.sql.gz
+echo "BACKUP STARTED FOR $BAKPGS3_PROJECT_NAME AT $(date)"
 
-dump_filename="/root/${BAKPGS3_PROJECT_NAME}.$(date '+%F').sql.gz"
+tmp_dir="/app/tmp"
+mkdir -p "$tmp_dir"
+rm -f "$tmp_dir"/*.sql.gz
 
-export PGPASSWORD="$BAKPGS3_DB_PASSWORD"
+datetime=$(date '+%F_%H-%M-%S')
+dump_filename="$BAKPGS3_PROJECT_NAME.$datetime.sql.gz"
+dump_filepath="$tmp_dir/$dump_filename"
 
+export PGPASSWORD="$db_password"
+
+echo "Creating database dump..."
 pg_dump --encoding utf8 \
 	-h "$BAKPGS3_DB_HOST" \
 	-p 5432 \
 	-U "$BAKPGS3_DB_USER" \
 	-d "$BAKPGS3_DB_DATABASE" |
-	gzip > "$dump_filename"
+	gzip >"$dump_filepath"
+
+if [ ${PIPESTATUS[0]} -ne 0 ]; then
+	log "ERR:\t$datetime\tDatabase dump failed"
+	rm -f "$dump_filepath"
+	exit 1
+fi
+
+file_size=$(du -h "$dump_filepath" | cut -f1)
+echo "DB dump created: $dump_filename ($file_size)"
 
 storage_dir="daily"
 
@@ -31,5 +54,14 @@ fi
 
 echo "Today is $(date +%d.%m.%Y), so the backup will be stored in $storage_dir"
 
-echo "Rclone copy $dump_filename to default:$BAKPGS3_S3_BUCKET/$storage_dir/"
-rclone copy "$dump_filename" "default:$BAKPGS3_S3_BUCKET/$storage_dir/"
+echo "Uploading backup to: $BAKPGS3_S3_BUCKET/$storage_dir/"
+rclone copy "$dump_filepath" "default:$BAKPGS3_S3_BUCKET/$storage_dir/"
+
+if [ $? -eq 0 ]; then
+	echo "Backup uploaded successfully"
+	rm -f "$dump_filepath"
+	log "OK:\t$datetime\t$storage_dir\t$dump_filename\t$file_size"
+else
+	log "ERR:\t$datetime\tUpload failed"
+	exit 1
+fi
