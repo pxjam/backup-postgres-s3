@@ -28,6 +28,8 @@ pg_dump --encoding utf8 \
 	-h "$BAKPGS3_DB_HOST" \
 	-p 5432 \
 	-U "$BAKPGS3_DB_USER" \
+	--no-owner \
+	--clean \
 	-d "$BAKPGS3_DB_DATABASE" |
 	gzip >"$dump_filepath"
 
